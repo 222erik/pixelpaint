@@ -5,12 +5,8 @@
 #include <SDL3/SDL_scancode.h>
 #include <stdio.h>
 #include "canva.h"
+#include "magicnumbers.h"
 #include "window.h"
-
-#define REFRESH_RATE 60
-
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 800
 
 int main(int argc, char *argv[]) {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
@@ -18,16 +14,22 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    struct Window window = {.construct = windowConstruct, .destruct = windowDestruct};
-    window.construct(&window, "pixelpaint", SCREEN_WIDTH, SCREEN_HEIGHT);
+    // This window is the main window where the pixelart is shown
+    struct Window mainWindow = {.construct = windowConstruct, .destruct = windowDestruct};
+    mainWindow.construct(&mainWindow, "pixelpaint", SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    // This window is the color palette to remind the user which colors are "active"
+    struct Window paletteWindow = {.construct = windowConstruct, .destruct = windowDestruct};
+    paletteWindow.construct(&paletteWindow, "palette", PALETTE_SCREEN_WIDTH_LEN * BOX_SIZE,
+                            PALETTE_COLORS / PALETTE_SCREEN_WIDTH_LEN * BOX_SIZE);
 
     struct Canva canva = {
         .construct = canvaConstruct, .destruct = canvaDestruct, .colorIn = canvaColorIn};
 
     {
-        SDL_Color palette[4] = {
+        SDL_Color palette[PALETTE_COLORS] = {
             {0, 0, 0}, {255, 0, 0}, {0, 255, 0}, {0, 0, 255}}; // black, red, green, blue
-        canva.construct(&canva, SCREEN_WIDTH, SCREEN_HEIGHT, 4, palette, 100);
+        canva.construct(&canva, SCREEN_WIDTH, SCREEN_HEIGHT, PALETTE_COLORS, palette, BOX_SIZE);
     }
 
     // SDL_HideCursor();
@@ -64,7 +66,7 @@ int main(int argc, char *argv[]) {
 
         SDL_Color drawColor = canva.palette[0];
         SDL_Color targetColor;
-        SDL_SetRenderDrawColor(window.renderer, drawColor.r, drawColor.g, drawColor.b, 255);
+        SDL_SetRenderDrawColor(mainWindow.renderer, drawColor.r, drawColor.g, drawColor.b, 255);
         for (int x = 0; x < canva.boxH; ++x) {
             for (int y = 0; y < canva.boxV; ++y) {
                 targetColor = canva.grid[y * canva.boxH + x];
@@ -76,22 +78,25 @@ int main(int argc, char *argv[]) {
 
                 if (targetColor.r == drawColor.r && targetColor.g == drawColor.g &&
                     targetColor.b == drawColor.b) {
-                    SDL_RenderFillRect(window.renderer, &rect);
+                    SDL_RenderFillRect(mainWindow.renderer, &rect);
                 } else {
                     drawColor = targetColor;
-                    SDL_SetRenderDrawColor(window.renderer, drawColor.r, drawColor.g, drawColor.b,
-                                           255);
-                    SDL_RenderFillRect(window.renderer, &rect);
+                    SDL_SetRenderDrawColor(mainWindow.renderer, drawColor.r, drawColor.g,
+                                           drawColor.b, 255);
+                    SDL_RenderFillRect(mainWindow.renderer, &rect);
                 }
             }
         }
-        SDL_RenderPresent(window.renderer);
+        SDL_SetRenderDrawColor(paletteWindow.renderer, 0, 0, 0, 255);
+        SDL_RenderClear(paletteWindow.renderer);
+        SDL_RenderPresent(mainWindow.renderer);
+        SDL_RenderPresent(paletteWindow.renderer);
 
         printf("%d\n", canva.grid[0].r);
     }
 
     canva.destruct(&canva);
-    window.destruct(&window);
+    mainWindow.destruct(&mainWindow);
     SDL_Quit();
     return 0;
 }
