@@ -24,6 +24,9 @@ int main(int argc, char *argv[]) {
     paletteWindow.construct(&paletteWindow, "palette", PALETTE_SCREEN_WIDTH_LEN * BOX_SIZE,
                             PALETTE_SCREEN_HEIGHT_LEN * BOX_SIZE);
 
+    struct Window colorWindow = {.construct = windowConstruct, .destruct = windowDestruct};
+    colorWindow.construct(&colorWindow, "color picker", 768, 100); // 768 = 256 * 3
+
     struct Canva canva = {.construct = canvaConstruct,
                           .destruct = canvaDestruct,
                           .colorIn = canvaColorIn,
@@ -115,8 +118,34 @@ int main(int argc, char *argv[]) {
             }
         }
 
+        count = 0;
+        // From red to green
+        for (int color = 255; color >= 0; --color) {
+            SDL_SetRenderDrawColor(colorWindow.renderer, color, 255 - color, 0, 255);
+            SDL_RenderLine(colorWindow.renderer, count, 0, count,
+                           colorWindow.height); // Draw a vertical line
+            count++;
+        }
+        // From green to blue
+        for (int color = 255; color >= 0; --color) {
+            SDL_SetRenderDrawColor(colorWindow.renderer, 0, color, 255 - color, 255);
+            SDL_RenderLine(colorWindow.renderer, count, 0, count,
+                           colorWindow.height); // Draw a vertical line
+            count++;
+        }
+        // From blue to red
+        for (int color = 255; color >= 0; --color) {
+            SDL_SetRenderDrawColor(colorWindow.renderer, 255 - color, 0, color, 255);
+            SDL_RenderLine(colorWindow.renderer, count, 0, count,
+                           colorWindow.height); // Draw a vertical line
+            count++;
+        }
+        if (count != 768)
+            printf("Something went wrong!%d", count);
+
         SDL_RenderPresent(mainWindow.renderer);
         SDL_RenderPresent(paletteWindow.renderer);
+        SDL_RenderPresent(colorWindow.renderer);
     }
 
     canva.destruct(&canva);
