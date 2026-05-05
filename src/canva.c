@@ -1,4 +1,5 @@
 #include "canva.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 void canvaConstruct(Canva *self, int width, int height, int paletteCount, SDL_Color *palette,
@@ -25,4 +26,22 @@ void canvaDestruct(Canva *self) {
 void canvaColorIn(Canva *self, int cursorX, int cursorY, int colorindex) {
     self->grid[(cursorY / self->boxSize) * self->boxH + (cursorX / self->boxSize)] =
         self->palette[colorindex];
+}
+
+void canvaSaveToPPM(Canva *self, char *filepath) {
+    FILE *file = fopen(filepath, "w");
+
+    fprintf(file, "P3 %d %d 255\n", self->boxH,
+            self->boxV); // Header for PPM file (magic, width, height, max color)
+
+    for (int i = 0; i < self->boxH * self->boxV; ++i) {
+        fprintf(file, "%d %d %d", self->grid[i].r, self->grid[i].g, self->grid[i].b);
+        if ((i + 1) % self->boxH == 0) {
+            fprintf(file, "\n");
+        } else {
+            fprintf(file, "  ");
+        }
+    }
+
+    fclose(file);
 }

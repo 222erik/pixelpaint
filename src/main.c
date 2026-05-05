@@ -18,13 +18,16 @@ int main(int argc, char *argv[]) {
     struct Window mainWindow = {.construct = windowConstruct, .destruct = windowDestruct};
     mainWindow.construct(&mainWindow, "pixelpaint", SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    // This window is the color palette to remind the user which colors are "active"
+    // This window is the color palette to remind the user which colors are
+    // used
     struct Window paletteWindow = {.construct = windowConstruct, .destruct = windowDestruct};
     paletteWindow.construct(&paletteWindow, "palette", PALETTE_SCREEN_WIDTH_LEN * BOX_SIZE,
                             PALETTE_SCREEN_HEIGHT_LEN * BOX_SIZE);
 
-    struct Canva canva = {
-        .construct = canvaConstruct, .destruct = canvaDestruct, .colorIn = canvaColorIn};
+    struct Canva canva = {.construct = canvaConstruct,
+                          .destruct = canvaDestruct,
+                          .colorIn = canvaColorIn,
+                          .saveToPPM = canvaSaveToPPM};
 
     {
         SDL_Color palette[PALETTE_COLORS] = {
@@ -57,7 +60,11 @@ int main(int argc, char *argv[]) {
         else if (keyboardState[SDL_SCANCODE_4])
             colorindex = 3;
         if (keyboardState[SDL_SCANCODE_LSHIFT])
-            canva.colorIn(&canva, cursorX, cursorY, colorindex);
+            canva.colorIn(&canva, cursorX, cursorY,
+                          colorindex); // Paint if shift is pressed
+        if (keyboardState[SDL_SCANCODE_LCTRL] && keyboardState[SDL_SCANCODE_S]) {
+            canva.saveToPPM(&canva, "image.ppm");
+        }
 
         // Exit if esc is pressed
         if (keyboardState[SDL_SCANCODE_ESCAPE]) {

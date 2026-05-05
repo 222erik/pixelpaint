@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+#include <stdio.h>
 
 typedef struct Canva {
     int width, height;
@@ -13,6 +14,7 @@ typedef struct Canva {
     void (*construct)(struct Canva *, int, int, int, SDL_Color *, int);
     void (*destruct)(struct Canva *);
     void (*colorIn)(struct Canva *, int, int, int);
+    void (*saveToPPM)(struct Canva *, char *);
 } Canva;
 
 void canvaConstruct(Canva *, int, int, int, SDL_Color *,
@@ -21,3 +23,5 @@ void canvaDestruct(Canva *);
 
 // Fill in a pixel in the grid by the cursor position
 void canvaColorIn(Canva *, int, int, int); // cursorX, cursorY, color # in palette
+
+void canvaSaveToPPM(Canva *, char *); // filepath
