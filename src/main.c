@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     // This window is the color palette to remind the user which colors are "active"
     struct Window paletteWindow = {.construct = windowConstruct, .destruct = windowDestruct};
     paletteWindow.construct(&paletteWindow, "palette", PALETTE_SCREEN_WIDTH_LEN * BOX_SIZE,
-                            PALETTE_COLORS / PALETTE_SCREEN_WIDTH_LEN * BOX_SIZE);
+                            PALETTE_SCREEN_HEIGHT_LEN * BOX_SIZE);
 
     struct Canva canva = {
         .construct = canvaConstruct, .destruct = canvaDestruct, .colorIn = canvaColorIn};
@@ -87,12 +87,29 @@ int main(int argc, char *argv[]) {
                 }
             }
         }
-        SDL_SetRenderDrawColor(paletteWindow.renderer, 0, 0, 0, 255);
-        SDL_RenderClear(paletteWindow.renderer);
+
+        int x = 0, y = 0;
+
+        int count = 0;
+        while (y < PALETTE_SCREEN_HEIGHT_LEN) {
+            SDL_FRect rect = {.x = x * canva.boxSize,
+                              .y = y * canva.boxSize,
+                              .w = canva.boxSize,
+                              .h = canva.boxSize};
+            SDL_SetRenderDrawColor(paletteWindow.renderer, canva.palette[count].r,
+                                   canva.palette[count].g, canva.palette[count].b, 255);
+            SDL_RenderFillRect(paletteWindow.renderer, &rect);
+
+            count++;
+            x++;
+            if (x >= PALETTE_SCREEN_WIDTH_LEN) {
+                x = 0;
+                y++;
+            }
+        }
+
         SDL_RenderPresent(mainWindow.renderer);
         SDL_RenderPresent(paletteWindow.renderer);
-
-        printf("%d\n", canva.grid[0].r);
     }
 
     canva.destruct(&canva);
