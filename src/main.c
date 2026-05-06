@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
                             PALETTE_SCREEN_HEIGHT_LEN * BOX_SIZE);
 
     struct Window colorWindow = {.construct = windowConstruct, .destruct = windowDestruct};
-    colorWindow.construct(&colorWindow, "color picker", 768, 100); // 768 = 256 * 3
+    colorWindow.construct(&colorWindow, "color picker", 768, 300); // 768 = 256 * 3
 
     struct Canva canva = {.construct = canvaConstruct,
                           .destruct = canvaDestruct,
@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
     SDL_Event event;
     bool running = true;
     int colorindex = 0; // First as default
+    SDL_Color chosenColor = {255, 0, 0};
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
@@ -119,29 +120,60 @@ int main(int argc, char *argv[]) {
         }
 
         count = 0;
-        // From red to green
-        for (int color = 255; color >= 0; --color) {
-            SDL_SetRenderDrawColor(colorWindow.renderer, color, 255 - color, 0, 255);
+        int height = colorWindow.height / 3; // The color section gets a third of the window
+        int colorChange = 2;
+        // From red to yellow
+        for (int color = 0; color < 256; color += colorChange) {
+            SDL_SetRenderDrawColor(colorWindow.renderer, 255, color, 0, 255);
             SDL_RenderLine(colorWindow.renderer, count, 0, count,
-                           colorWindow.height); // Draw a vertical line
+                           height); // Draw a vertical line with the right color
             count++;
         }
-        // From green to blue
-        for (int color = 255; color >= 0; --color) {
-            SDL_SetRenderDrawColor(colorWindow.renderer, 0, color, 255 - color, 255);
+        // From yellow to green
+        for (int color = 255; color >= 0; color -= colorChange) {
+            SDL_SetRenderDrawColor(colorWindow.renderer, color, 255, 0, 255);
             SDL_RenderLine(colorWindow.renderer, count, 0, count,
-                           colorWindow.height); // Draw a vertical line
+                           height); // Draw a vertical line with the right color
             count++;
         }
-        // From blue to red
-        for (int color = 255; color >= 0; --color) {
-            SDL_SetRenderDrawColor(colorWindow.renderer, 255 - color, 0, color, 255);
-            SDL_RenderLine(colorWindow.renderer, count, 0, count,
-                           colorWindow.height); // Draw a vertical line
+        // From green to cyan
+        for (int color = 0; color < 256; color += colorChange) {
+            SDL_SetRenderDrawColor(colorWindow.renderer, 0, 255, color, 255);
+            SDL_RenderLine(colorWindow.renderer, count, 0, count, height);
             count++;
         }
-        if (count != 768)
-            printf("Something went wrong!%d", count);
+        // From cyan to blue
+        for (int color = 255; color >= 0; color -= colorChange) {
+            SDL_SetRenderDrawColor(colorWindow.renderer, 0, color, 255, 255);
+            SDL_RenderLine(colorWindow.renderer, count, 0, count, height);
+            count++;
+        }
+        // From blue to magenta
+        for (int color = 0; color < 256; color += colorChange) {
+            SDL_SetRenderDrawColor(colorWindow.renderer, color, 0, 255, 255);
+            SDL_RenderLine(colorWindow.renderer, count, 0, count, height);
+            count++;
+        }
+        // From magenta to red
+        for (int color = 255; color >= 0; color -= colorChange) {
+            SDL_SetRenderDrawColor(colorWindow.renderer, 255, 0, color, 255);
+            SDL_RenderLine(colorWindow.renderer, count, 0, count, height);
+            count++;
+        }
+
+        // Saturation (white to chosenColor)
+        count = 0;
+        for (int saturation = 0; saturation < 256; saturation++) {
+            SDL_SetRenderDrawColor(
+                colorWindow.renderer,
+                chosenColor.r + ((255 - chosenColor.r) * (255 - saturation) / 256),
+                chosenColor.g + ((255 - chosenColor.g) * (255 - saturation) / 256),
+                chosenColor.b + ((255 - chosenColor.b) * (255 - saturation) / 256), 255);
+            for (int i = 0; i < 6 / colorChange; ++i) {
+                SDL_RenderLine(colorWindow.renderer, count + i, height, count + i, height * 2);
+            }
+            count += 6 / colorChange;
+        }
 
         SDL_RenderPresent(mainWindow.renderer);
         SDL_RenderPresent(paletteWindow.renderer);
