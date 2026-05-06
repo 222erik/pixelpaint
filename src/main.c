@@ -8,6 +8,8 @@
 #include "magicnumbers.h"
 #include "window.h"
 
+void delay();
+
 int main(int argc, char *argv[]) {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         printf("SDL_Init Error: %s%c", SDL_GetError(), '\n');
@@ -44,6 +46,7 @@ int main(int argc, char *argv[]) {
     bool running = true;
     int colorindex = 0; // First as default
     SDL_Color chosenColor = {255, 0, 0};
+    SDL_Color chosenColorSaturation = {255, 255, 30};
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
@@ -175,13 +178,30 @@ int main(int argc, char *argv[]) {
             count += 6 / colorChange;
         }
 
+        // Brightness (black to chosenColorSaturation)
+        count = 0;
+        for (int brightness = 0; brightness < 256; brightness++) {
+            SDL_SetRenderDrawColor(colorWindow.renderer,
+                                   (chosenColorSaturation.r * brightness / 255),
+                                   (chosenColorSaturation.g * brightness / 255),
+                                   (chosenColorSaturation.b * brightness / 255), 255);
+            for (int i = 0; i < 6 / colorChange; ++i) {
+                SDL_RenderLine(colorWindow.renderer, count + i, height * 2, count + i, height * 3);
+            }
+            count += 6 / colorChange;
+        }
+
         SDL_RenderPresent(mainWindow.renderer);
         SDL_RenderPresent(paletteWindow.renderer);
         SDL_RenderPresent(colorWindow.renderer);
+
+        delay();
     }
 
     canva.destruct(&canva);
     mainWindow.destruct(&mainWindow);
+    paletteWindow.destruct(&paletteWindow);
+    colorWindow.destruct(&colorWindow);
     SDL_Quit();
     return 0;
 }
