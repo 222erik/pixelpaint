@@ -12,9 +12,9 @@
 
 void delay();
 void generateColorMap(SDL_Color *map); // Generates a map of all the colors (used in the color bar)
-void updateChosenColors(SDL_Color *, SDL_Color *, SDL_Color *, int, int, int,
-                        int); // Last two arguments are the width and height of the bars (all the
-                              // bars are the same size)
+void updateChosenColors(SDL_Color *, SDL_Color *, SDL_Color *, int, int, int, int, SDL_Color *, int,
+                        int); // The 6th and 7th arguments are the width and height
+                              // of the bars (all the bars are the same size)
 
 int main(int argc, char *argv[]) {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
@@ -96,7 +96,8 @@ int main(int argc, char *argv[]) {
                                   colorindex); // Paint if shift is pressed
                 if (keyboardState[SDL_SCANCODE_LALT])
                     updateChosenColors(&chosenColor, &chosenSaturation, &chosenBrightness, cursorX,
-                                       cursorY, colorWindow.width, height);
+                                       cursorY, colorWindow.width, height, colorMap, colorScale,
+                                       saturationAndBrightnessScale);
                 if (keyboardState[SDL_SCANCODE_LCTRL] && keyboardState[SDL_SCANCODE_S]) {
                     canva.saveToPPM(&canva, "image.ppm");
                 }
@@ -269,7 +270,28 @@ void generateColorMap(SDL_Color *map) {
 
 void updateChosenColors(SDL_Color *chosenColor, SDL_Color *chosenSaturation,
                         SDL_Color *chosenBrightness, int cursorX, int cursorY, int width,
-                        int height) {
+                        int height, SDL_Color *colorMap, int colorScale,
+                        int saturationAndBrightnessScale) {
     if (cursorY < height) {
+        *chosenColor = colorMap[cursorX * colorScale];
+    } else if (cursorY < height * 2) {
+        chosenSaturation->r =
+            chosenColor->r +
+            ((255 - chosenColor->r) * (255 - (cursorX / saturationAndBrightnessScale)) / 255);
+        chosenSaturation->g =
+            chosenColor->g +
+            ((255 - chosenColor->g) * (255 - (cursorX / saturationAndBrightnessScale)) / 255);
+        chosenSaturation->b =
+            chosenColor->b +
+            ((255 - chosenColor->b) * (255 - (cursorX / saturationAndBrightnessScale)) / 255);
+    } else if (cursorY < height * 3) {
+        chosenBrightness->r =
+            (chosenSaturation->r * (cursorX / saturationAndBrightnessScale) / 255);
+        chosenBrightness->g =
+            (chosenSaturation->g * (cursorX / saturationAndBrightnessScale) / 255);
+        chosenBrightness->b =
+            (chosenSaturation->b * (cursorX / saturationAndBrightnessScale) / 255);
+    } else {
+        printf("Something went wrong!\n");
     }
 }
