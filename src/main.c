@@ -1,14 +1,20 @@
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_oldnames.h>
+#include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_scancode.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "canva.h"
 #include "magicnumbers.h"
 #include "window.h"
 
 void delay();
+void generateColorMap(SDL_Color *map); // Generates a map of all the colors (used in the color bar)
+void updateChosenColors(SDL_Color *, SDL_Color *, SDL_Color *, int, int, int,
+                        int); // Last two arguments are the width and height of the bars (all the
+                              // bars are the same size)
 
 int main(int argc, char *argv[]) {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
@@ -27,7 +33,7 @@ int main(int argc, char *argv[]) {
                             PALETTE_SCREEN_HEIGHT_LEN * BOX_SIZE);
 
     struct Window colorWindow = {.construct = windowConstruct, .destruct = windowDestruct};
-    colorWindow.construct(&colorWindow, "color picker", 768, 300); // 768 = 256 * 3
+    // This window is constructed later
 
     struct Canva canva = {.construct = canvaConstruct,
                           .destruct = canvaDestruct,
@@ -40,6 +46,9 @@ int main(int argc, char *argv[]) {
         canva.construct(&canva, SCREEN_WIDTH, SCREEN_HEIGHT, PALETTE_COLORS, palette, BOX_SIZE);
     }
 
+    SDL_Color *colorMap = malloc(256 * 6 * sizeof(SDL_Color));
+    generateColorMap(colorMap);
+
     // SDL_HideCursor();
 
     {
@@ -48,8 +57,9 @@ int main(int argc, char *argv[]) {
         int colorindex = 0; // Index of color in palette that is used to draw (first as default)
         SDL_Color chosenColor = {255, 0,
                                  0}; // The color in the colorWindow that the user has picked
-        SDL_Color chosenColorSaturation = {
+        SDL_Color chosenSaturation = {
             255, 255, 30}; // The color combined with the satureation that the user has picked
+        SDL_Color chosenBrightness; // Color, saturation, and brightness combined
         int height =
             colorWindow.height /
             3; // How high the bars will be (one bar each to color, saturation, and brightness)
@@ -58,6 +68,9 @@ int main(int argc, char *argv[]) {
         int saturationAndBrightnessScale =
             6 / colorScale; // Same thing as colorScale, but for saturation and brightness
                             // bar (color bar is 6 times big!) (scales up)
+        colorWindow.construct(&colorWindow, "color picker", 256 * 6 / colorScale,
+                              300); // This needs to be constructed here
+
         while (running) {
             while (SDL_PollEvent(&event)) {
                 if (event.type == SDL_EVENT_QUIT) {
@@ -81,6 +94,9 @@ int main(int argc, char *argv[]) {
                 if (keyboardState[SDL_SCANCODE_LSHIFT])
                     canva.colorIn(&canva, cursorX, cursorY,
                                   colorindex); // Paint if shift is pressed
+                if (keyboardState[SDL_SCANCODE_LALT])
+                    updateChosenColors(&chosenColor, &chosenSaturation, &chosenBrightness, cursorX,
+                                       cursorY, colorWindow.height, height);
                 if (keyboardState[SDL_SCANCODE_LCTRL] && keyboardState[SDL_SCANCODE_S]) {
                     canva.saveToPPM(&canva, "image.ppm");
                 }
@@ -137,46 +153,11 @@ int main(int argc, char *argv[]) {
             }
 
             {
-                int count = 0;
-                // From red to yellow
-                for (int color = 0; color < 256;
-                     color +=
-                     colorScale) { // Color increases by colorScale to make the bars shorter
-                    SDL_SetRenderDrawColor(colorWindow.renderer, 255, color, 0, 255);
+                for (int count = 0; count < colorWindow.width; count++) {
+                    SDL_Color color = colorMap[count * colorScale];
+                    SDL_SetRenderDrawColor(colorWindow.renderer, color.r, color.g, color.b, 255);
                     SDL_RenderLine(colorWindow.renderer, count, 0, count,
                                    height); // Draw a vertical line with the right color
-                    count++;
-                }
-                // From yellow to green
-                for (int color = 255; color >= 0; color -= colorScale) {
-                    SDL_SetRenderDrawColor(colorWindow.renderer, color, 255, 0, 255);
-                    SDL_RenderLine(colorWindow.renderer, count, 0, count,
-                                   height); // Draw a vertical line with the right color
-                    count++;
-                }
-                // From green to cyan
-                for (int color = 0; color < 256; color += colorScale) {
-                    SDL_SetRenderDrawColor(colorWindow.renderer, 0, 255, color, 255);
-                    SDL_RenderLine(colorWindow.renderer, count, 0, count, height);
-                    count++;
-                }
-                // From cyan to blue
-                for (int color = 255; color >= 0; color -= colorScale) {
-                    SDL_SetRenderDrawColor(colorWindow.renderer, 0, color, 255, 255);
-                    SDL_RenderLine(colorWindow.renderer, count, 0, count, height);
-                    count++;
-                }
-                // From blue to magenta
-                for (int color = 0; color < 256; color += colorScale) {
-                    SDL_SetRenderDrawColor(colorWindow.renderer, color, 0, 255, 255);
-                    SDL_RenderLine(colorWindow.renderer, count, 0, count, height);
-                    count++;
-                }
-                // From magenta to red
-                for (int color = 255; color >= 0; color -= colorScale) {
-                    SDL_SetRenderDrawColor(colorWindow.renderer, 255, 0, color, 255);
-                    SDL_RenderLine(colorWindow.renderer, count, 0, count, height);
-                    count++;
                 }
             }
 
@@ -200,9 +181,9 @@ int main(int argc, char *argv[]) {
                 // Brightness (black to chosenColorSaturation)
                 for (int brightness = 0; brightness < 256; brightness++) {
                     SDL_SetRenderDrawColor(colorWindow.renderer,
-                                           (chosenColorSaturation.r * brightness / 255),
-                                           (chosenColorSaturation.g * brightness / 255),
-                                           (chosenColorSaturation.b * brightness / 255), 255);
+                                           (chosenSaturation.r * brightness / 255),
+                                           (chosenSaturation.g * brightness / 255),
+                                           (chosenSaturation.b * brightness / 255), 255);
                     for (int i = 0; i < saturationAndBrightnessScale; ++i) {
                         SDL_RenderLine(colorWindow.renderer,
                                        brightness * saturationAndBrightnessScale + i, height * 2,
@@ -223,6 +204,9 @@ int main(int argc, char *argv[]) {
     mainWindow.destruct(&mainWindow);
     paletteWindow.destruct(&paletteWindow);
     colorWindow.destruct(&colorWindow);
+
+    free(colorMap);
+
     SDL_Quit();
     return 0;
 }
@@ -233,5 +217,58 @@ void delay() {
 
     if (currentTime - lastUpdate < 1000 / REFRESH_RATE) {
         SDL_Delay(1000 / REFRESH_RATE - (currentTime - lastUpdate));
+    }
+}
+
+void generateColorMap(SDL_Color *map) {
+    int count = 0;
+    // From red to yellow
+    for (int color = 0; color < 256; color++) {
+        (map + count)->r = 255;
+        (map + count)->g = color;
+        (map + count)->b = 0;
+        count++;
+    }
+    // From yellow to green
+    for (int color = 255; color >= 0; color--) {
+        (map + count)->r = color;
+        (map + count)->g = 255;
+        (map + count)->b = 0;
+        count++;
+    }
+    // From green to cyan
+    for (int color = 0; color < 256; color++) {
+        (map + count)->r = 0;
+        (map + count)->g = 255;
+        (map + count)->b = color;
+        count++;
+    }
+    // From cyan to blue
+    for (int color = 255; color >= 0; color--) {
+        (map + count)->r = 0;
+        (map + count)->g = color;
+        (map + count)->b = 255;
+        count++;
+    }
+    // From blue to magenta
+    for (int color = 0; color < 256; color++) {
+        (map + count)->r = color;
+        (map + count)->g = 0;
+        (map + count)->b = 255;
+        count++;
+    }
+    // From magenta to red
+    for (int color = 255; color >= 0; color--) {
+        (map + count)->r = 255;
+        (map + count)->g = 0;
+        (map + count)->b = color;
+        count++;
+    }
+}
+
+void updateChosenColors(SDL_Color *chosenColor, SDL_Color *chosenSaturation,
+                        SDL_Color *chosenBrightness, int cursorX, int cursorY, int width,
+                        int height) {
+    if (cursorY < height) {
     }
 }
