@@ -60,9 +60,6 @@ int main(int argc, char *argv[]) {
         SDL_Color chosenSaturation = {
             255, 255, 30}; // The color combined with the satureation that the user has picked
         SDL_Color chosenBrightness; // Color, saturation, and brightness combined
-        int height =
-            colorWindow.height /
-            3; // How high the bars will be (one bar each to color, saturation, and brightness)
         int colorScale = 2; // This devides the length of the color bar with 2 (the bar will be too
                             // big if it isn't shrinked) (it scales down)
         int saturationAndBrightnessScale =
@@ -70,6 +67,9 @@ int main(int argc, char *argv[]) {
                             // bar (color bar is 6 times big!) (scales up)
         colorWindow.construct(&colorWindow, "color picker", 256 * 6 / colorScale,
                               300); // This needs to be constructed here
+        int height =
+            colorWindow.height /
+            3; // How high the bars will be (one bar each to color, saturation, and brightness)
 
         while (running) {
             while (SDL_PollEvent(&event)) {
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
                                   colorindex); // Paint if shift is pressed
                 if (keyboardState[SDL_SCANCODE_LALT])
                     updateChosenColors(&chosenColor, &chosenSaturation, &chosenBrightness, cursorX,
-                                       cursorY, colorWindow.height, height);
+                                       cursorY, colorWindow.width, height);
                 if (keyboardState[SDL_SCANCODE_LCTRL] && keyboardState[SDL_SCANCODE_S]) {
                     canva.saveToPPM(&canva, "image.ppm");
                 }
@@ -218,6 +218,7 @@ void delay() {
     if (currentTime - lastUpdate < 1000 / REFRESH_RATE) {
         SDL_Delay(1000 / REFRESH_RATE - (currentTime - lastUpdate));
     }
+    lastUpdate = SDL_GetTicks();
 }
 
 void generateColorMap(SDL_Color *map) {
