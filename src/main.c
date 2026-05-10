@@ -66,10 +66,9 @@ int main(int argc, char *argv[]) {
             6 / colorScale; // Same thing as colorScale, but for saturation and brightness
                             // bar (color bar is 6 times big!) (scales up)
         colorWindow.construct(&colorWindow, "color picker", 256 * 6 / colorScale,
-                              300); // This needs to be constructed here
-        int height =
-            colorWindow.height /
-            3; // How high the bars will be (one bar each to color, saturation, and brightness)
+                              400);          // This needs to be constructed here
+        int height = colorWindow.height / 4; // How high the bars will be (one bar each to color,
+                                             // saturation, brightness, and preview)
 
         while (running) {
             while (SDL_PollEvent(&event)) {
@@ -190,6 +189,14 @@ int main(int argc, char *argv[]) {
                                        brightness * saturationAndBrightnessScale + i, height * 2,
                                        brightness * saturationAndBrightnessScale + i, height * 3);
                     }
+                }
+            }
+
+            {
+                SDL_SetRenderDrawColor(colorWindow.renderer, chosenBrightness.r, chosenBrightness.g,
+                                       chosenBrightness.b, 255);
+                for (int i = 0; i < colorWindow.width; ++i) {
+                    SDL_RenderLine(colorWindow.renderer, i, colorWindow.height, i, height * 3);
                 }
             }
 
