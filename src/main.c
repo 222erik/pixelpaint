@@ -41,8 +41,12 @@ int main(int argc, char *argv[]) {
                           .saveToPPM = canvaSaveToPPM};
 
     {
-        SDL_Color palette[PALETTE_COLORS] = {
-            {0, 0, 0}, {255, 0, 0}, {0, 255, 0}, {0, 0, 255}}; // black, red, green, blue
+        SDL_Color palette[PALETTE_COLORS] = {{0, 0, 0},      {255, 0, 0},
+                                             {0, 255, 0},    {0, 0, 255},
+                                             {255, 255, 0},  {0, 255, 255},
+                                             {255, 0, 255},  {150, 150, 150},
+                                             {255, 255, 255}}; // black, red, green, blue, yellow,
+                                                               // cyan, magenta, grey, white
         canva.construct(&canva, SCREEN_WIDTH, SCREEN_HEIGHT, PALETTE_COLORS, palette, BOX_SIZE);
     }
 
@@ -58,8 +62,8 @@ int main(int argc, char *argv[]) {
         SDL_Color chosenColor = {255, 0,
                                  0}; // The color in the colorWindow that the user has picked
         SDL_Color chosenSaturation = {
-            255, 255, 30}; // The color combined with the satureation that the user has picked
-        SDL_Color chosenBrightness; // Color, saturation, and brightness combined
+            255, 0, 0}; // The color combined with the satureation that the user has picked
+        SDL_Color chosenBrightness = {255, 0, 0}; // Color, saturation, and brightness combined
         int colorScale = 2; // This devides the length of the color bar with 2 (the bar will be too
                             // big if it isn't shrinked) (it scales down)
         int saturationAndBrightnessScale =
@@ -81,22 +85,47 @@ int main(int argc, char *argv[]) {
                 const bool *keyboardState = SDL_GetKeyboardState(NULL);
                 float cursorX, cursorY;
                 SDL_GetMouseState(&cursorX, &cursorY);
+                bool numberPressed = false;
 
-                if (keyboardState[SDL_SCANCODE_1])
+                if (keyboardState[SDL_SCANCODE_1]) {
                     colorindex = 0;
-                else if (keyboardState[SDL_SCANCODE_2])
+                    numberPressed = true;
+                } else if (keyboardState[SDL_SCANCODE_2]) {
                     colorindex = 1;
-                else if (keyboardState[SDL_SCANCODE_3])
+                    numberPressed = true;
+                } else if (keyboardState[SDL_SCANCODE_3]) {
                     colorindex = 2;
-                else if (keyboardState[SDL_SCANCODE_4])
+                    numberPressed = true;
+                } else if (keyboardState[SDL_SCANCODE_4]) {
                     colorindex = 3;
+                    numberPressed = true;
+                } else if (keyboardState[SDL_SCANCODE_5]) {
+                    colorindex = 4;
+                    numberPressed = true;
+                } else if (keyboardState[SDL_SCANCODE_6]) {
+                    colorindex = 5;
+                    numberPressed = true;
+                } else if (keyboardState[SDL_SCANCODE_7]) {
+                    colorindex = 6;
+                    numberPressed = true;
+                } else if (keyboardState[SDL_SCANCODE_8]) {
+                    colorindex = 7;
+                    numberPressed = true;
+                } else if (keyboardState[SDL_SCANCODE_9]) {
+                    colorindex = 8;
+                    numberPressed = true;
+                }
                 if (keyboardState[SDL_SCANCODE_LSHIFT])
                     canva.colorIn(&canva, cursorX, cursorY,
                                   colorindex); // Paint if shift is pressed
-                if (keyboardState[SDL_SCANCODE_LALT])
+                if (keyboardState[SDL_SCANCODE_LALT]) {
                     updateChosenColors(&chosenColor, &chosenSaturation, &chosenBrightness, cursorX,
                                        cursorY, colorWindow.width, height, colorMap, colorScale,
                                        saturationAndBrightnessScale);
+
+                    if (numberPressed)
+                        canva.palette[colorindex] = chosenBrightness;
+                }
                 if (keyboardState[SDL_SCANCODE_LCTRL] && keyboardState[SDL_SCANCODE_S]) {
                     canva.saveToPPM(&canva, "image.ppm");
                 }
@@ -111,7 +140,7 @@ int main(int argc, char *argv[]) {
             SDL_SetRenderDrawColor(mainWindow.renderer, drawColor.r, drawColor.g, drawColor.b, 255);
             for (int x = 0; x < canva.boxH; ++x) {
                 for (int y = 0; y < canva.boxV; ++y) {
-                    SDL_Color boxColor = canva.grid[y * canva.boxH + x];
+                    SDL_Color boxColor = canva.palette[canva.grid[y * canva.boxH + x]];
 
                     SDL_FRect rect = {.x = x * canva.boxSize,
                                       .y = y * canva.boxSize,
@@ -298,7 +327,5 @@ void updateChosenColors(SDL_Color *chosenColor, SDL_Color *chosenSaturation,
             (chosenSaturation->g * (cursorX / saturationAndBrightnessScale) / 255);
         chosenBrightness->b =
             (chosenSaturation->b * (cursorX / saturationAndBrightnessScale) / 255);
-    } else {
-        printf("Something went wrong!\n");
     }
 }

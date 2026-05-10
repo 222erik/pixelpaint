@@ -11,9 +11,9 @@ void canvaConstruct(Canva *self, int width, int height, int paletteCount, SDL_Co
     self->paletteCount = paletteCount;
     self->boxSize = boxSize;
 
-    self->grid = malloc(sizeof(SDL_Color) * self->boxH * self->boxV);
+    self->grid = malloc(sizeof(int) * self->boxH * self->boxV);
     for (int i = 0; i < self->boxH * self->boxV; ++i)
-        self->grid[i] = palette[0];
+        self->grid[i] = 0; // By default, every box has the color of the first color in palette
     self->palette = malloc(sizeof(SDL_Color) * paletteCount);
     memcpy(self->palette, palette, sizeof(SDL_Color) * paletteCount);
 }
@@ -24,8 +24,7 @@ void canvaDestruct(Canva *self) {
 }
 
 void canvaColorIn(Canva *self, int cursorX, int cursorY, int colorindex) {
-    self->grid[(cursorY / self->boxSize) * self->boxH + (cursorX / self->boxSize)] =
-        self->palette[colorindex];
+    self->grid[(cursorY / self->boxSize) * self->boxH + (cursorX / self->boxSize)] = colorindex;
 }
 
 void canvaSaveToPPM(Canva *self, char *filepath) {
@@ -35,7 +34,8 @@ void canvaSaveToPPM(Canva *self, char *filepath) {
             self->boxV); // Header for PPM file (magic, width, height, max color)
 
     for (int i = 0; i < self->boxH * self->boxV; ++i) {
-        fprintf(file, "%d %d %d", self->grid[i].r, self->grid[i].g, self->grid[i].b);
+        fprintf(file, "%d %d %d", self->palette[self->grid[i]].r, self->palette[self->grid[i]].g,
+                self->palette[self->grid[i]].b);
         if ((i + 1) % self->boxH == 0) {
             fprintf(file, "\n");
         } else {

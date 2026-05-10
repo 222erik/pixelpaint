@@ -1,7 +1,6 @@
 #pragma once
 
 #include <SDL3/SDL.h>
-#include <stdio.h>
 
 typedef struct Canva {
     int width, height;
@@ -9,7 +8,7 @@ typedef struct Canva {
     int paletteCount; // How many colors in palette
     int boxSize;
     SDL_Color *palette;
-    SDL_Color *grid;
+    int *grid; // Each element countains the index of the color in palette
 
     void (*construct)(struct Canva *, int, int, int, SDL_Color *, int);
     void (*destruct)(struct Canva *);
